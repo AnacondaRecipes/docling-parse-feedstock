@@ -1,5 +1,19 @@
+From 53ca2cf4360ef38e79febdfcc5dca7851a28f4af Mon Sep 17 00:00:00 2001
+From: Charles Bousseau <cbousseau@anaconda.com>
+Date: Fri, 6 Nov 2026 18:57:23 -0500
+Subject: [PATCH] cmake: point the utf8 extlib at conda's utfcpp package
+
+With USE_SYSTEM_DEPS=on, extlib_utf8.git.cmake looks for the utf8cpp CMake
+target, which conda's utfcpp package does not provide. The headers resolve
+from the default include path anyway, so drop the find_package call and
+reference the utfcpp target name instead. Carried over from the
+conda-forge docling-parse feedstock (header-less there; re-authored).
+---
+ cmake/extlib_utf8.git.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
 diff --git a/cmake/extlib_utf8.git.cmake b/cmake/extlib_utf8.git.cmake
-index daf3588..37789e4 100644
+index be2fdb8..40050f5 100644
 --- a/cmake/extlib_utf8.git.cmake
 +++ b/cmake/extlib_utf8.git.cmake
 @@ -7,10 +7,10 @@ if(USE_SYSTEM_DEPS)

@@ -1,0 +1,139 @@
+{% set name = "docling-parse" %}
+{% set version = "7.24.2" %}
+{% set sha256 = "95dca04a332fcd76acdbeca4b89c88d45a0ab73fd837a6d20f0582a244122b98" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  - url: https://github.com/docling-project/{{ name }}/archive/refs/tags/v{{ version }}.zip
+    sha256: {{ sha256 }}
+    patches:
+      - fix-utfcpp.patch
+  # LICENSE for the PDFium JBIG2-decoder subset vendored (and kept bundled) in
+  # src/third_party/pdfium_jbig2. The exact PDFium snapshot commit is not
+  # recorded upstream (open provenance question on
+  # https://github.com/docling-project/docling-parse/pull/252); the vendored
+  # files use PDFium's pre-rename JBig2_* file layout, so they predate
+  # pdfium's snake_case rename. The archived chromium/pdfium GitHub mirror is
+  # immutable and its LICENSE is byte-identical (sha256-verified 2026-11-06)
+  # to pdfium.googlesource.com/pdfium@f8e0f053178d9030b9e3878d780bc75f70518e1c.
+  - url: https://raw.githubusercontent.com/chromium/pdfium/main/LICENSE
+    sha256: 1fe9dea718fbd75cf149adaf4d8a22a4335604d964ddb76d1b45383dec8668c9
+    folder: pdfium-license
+
+build:
+  number: 0
+  skip: true  # [win]
+  script: build.sh
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - cmake >=3.27.0,<4.0.0
+    - make  # [unix]
+    - pkg-config
+  host:
+    # python build tools ([build-system].requires of pyproject.toml, minus the
+    # cibuildwheel/delocate wheel-CI tooling that a conda build does not run)
+    - python
+    - pip
+    - setuptools >=77.0.3
+    - pybind11 >=2.13.6
+    # pybind11 is built into the extension; pin the stable ABI the aggregate
+    # CBC has no key for (pybind11 2.x and 3.x both export ABI 4)
+    - pybind11-abi 4
+    - wheel >=0.43.0,<1.0.0
+    # C++ libraries consumed via USE_SYSTEM_DEPS=on (cmake/extlib_*.cmake):
+    # cxxopts / loguru / nlohmann_json / utfcpp / libjpeg-turbo / openjpeg /
+    # lcms2 / qpdf / blend2d / freetype are unvendored to conda packages;
+    # the PDFium JBIG2 decoder subset is kept bundled (BSD-3-Clause, see
+    # the second source entry). No aggregate-CBC key exists for the first
+    # six, so they carry exact host pins (AR host-pinning policy); the rest
+    # pin through their CBC variables.
+    - cxxopts 3.2.1
+    - loguru-cpp 2.2.0
+    - nlohmann_json 3.12.0
+    - utfcpp 4.0.9
+    - libjpeg-turbo 3.1.3
+    - openjpeg {{ openjpeg }}
+    - lcms2 {{ lcms2 }}
+    - qpdf {{ qpdf }}
+    - zlib {{ zlib }}
+    - blend2d 0.21.2
+    - freetype {{ freetype }}
+  run:
+    - python
+    - tabulate >=0.9.0,<1.0.0
+    - pillow >=10.0.0,<14.0.0
+    - pydantic >=2.0.0
+    - docling-core >=2.99.0,<3.0.0
+    - blend2d
+    - pywin32 >=305  # [win]
+
+test:
+  imports:
+    - docling_parse
+  requires:
+    - pip
+    - pytest
+    - huggingface_hub
+    - fonttools
+  source_files:
+    - tests/
+  commands:
+    - pip check
+    # unit tests build every document they need inline (tests/pdf_builder.py),
+    # so the HuggingFace regression corpus is never downloaded
+    - pytest -vv tests/test_unit*.py --deselect=tests/test_unit_damaged_pages.py::test_lost_resources_object_is_reported --deselect=tests/test_unit_text_render_modes.py::test_stroking_render_mode_is_heavier_than_fill  # [linux]
+    # integration: parse a tiny inline-generated PDF through the Python API
+    - |
+      python - <<'PYEOF'
+      from io import BytesIO
+
+      from docling_parse.pdf_parser import DecodeConfig, DoclingPdfParser
+      from tests.pdf_builder import build_pdf
+
+      content = "BT /F1 24 Tf 40 50 Td (Hello docling-parse) Tj ET"
+      pdf = build_pdf(
+          [
+              "<< /Type /Catalog /Pages 2 0 R >>",
+              "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+              "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 220 100] "
+              "/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+              "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica "
+              "/Encoding /WinAnsiEncoding >>",
+              f"<< /Length {len(content)} >>\nstream\n{content}\nendstream",
+          ]
+      )
+      parser = DoclingPdfParser(loglevel="fatal")
+      doc = parser.load(path_or_stream=BytesIO(pdf), decode_config=DecodeConfig())
+      _, page = next(doc.iterate_pages())
+      text = "".join(cell.text for cell in page.textline_cells)
+      assert "Hello docling-parse" in text, text
+      print("integration parse OK:", repr(text))
+      PYEOF
+
+about:
+  home: https://github.com/docling-project/docling-parse
+  summary: Simple package to extract text with coordinates from programmatic PDFs
+  description: >-
+    Simple package to extract text with coordinates from programmatic PDFs.
+    Ships a pybind11 extension built on top of qpdf and a bundled PDFium
+    JBIG2 decoder, with text extraction and page rendering for the
+    docling document-conversion stack.
+  license: BSD-3-Clause AND MIT
+  license_family: Other
+  license_file:
+    - LICENSE
+    - docling_parse/pdf_resources/cmap-resources/LICENSE.md
+    - pdfium-license/LICENSE
+  doc_url: https://github.com/docling-project/docling-parse#readme
+  dev_url: https://github.com/docling-project/docling-parse
+
+extra:
+  recipe-maintainers:
+    - kklein
+    - mgorny

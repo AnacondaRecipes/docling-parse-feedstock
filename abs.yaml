@@ -1,0 +1,11 @@
+channels:
+  # cxxopts-feedstock PR#1 (cxxopts 3.2.1); linter task failed, builds/tests/gates/aggregation green
+  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/44080d8a-8e02-4b41-9e60-b2238e5b28d4
+  # loguru-cpp-feedstock PR#1 (loguru-cpp 2.2.0)
+  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/cea53805-c3cf-4ab0-bb7b-2576ceb6ae27
+  # blend2d-feedstock PR#1 (blend2d 0.21.2)
+  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/b8dd5471-a427-4810-89fb-e778ffc4bbf2
+  # docling-core-feedstock PR#1 (docling-core 2.105.0)
+  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/747b0995-e2c4-4f0e-be6e-d7229ffb3722
+build_parameters:
+  - --error-overlinking
