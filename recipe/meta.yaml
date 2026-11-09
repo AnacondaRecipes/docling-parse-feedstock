@@ -10,6 +10,7 @@ source:
     sha256: 8b4e98e0a836dbe7e48e3f041a552ac252bd437ed0a52a62cf4a5f6f8fe73cb0
     patches:
       - fix-utfcpp.patch
+      - fix-jbig2-loguru-link.patch
   # LICENSE for the PDFium JBIG2-decoder subset vendored (and kept bundled) in
   # src/third_party/pdfium_jbig2. The exact PDFium snapshot commit is not
   # recorded upstream (open provenance question on
