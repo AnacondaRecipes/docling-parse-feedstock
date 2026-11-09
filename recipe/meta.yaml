@@ -80,7 +80,7 @@ test:
     - pip check
     # unit tests build every document they need inline (tests/pdf_builder.py),
     # so the HuggingFace regression corpus is never downloaded
-    - pytest -vv tests/test_unit*.py -k "not (test_lost_resources_object_is_reported)"
+    - python -c "import glob, pytest, sys; sys.exit(pytest.main(['-vv', '-k', 'not (test_lost_resources_object_is_reported)'] + sorted(glob.glob('tests/test_unit_*.py'))))"
 
 about:
   home: https://github.com/docling-project/docling-parse
