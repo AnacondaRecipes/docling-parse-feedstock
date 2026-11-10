@@ -89,12 +89,14 @@ about:
     Simple package to extract text, paths and bitmap images with coordinates from
     programmatic PDFs. This package is used for text extraction and page rendering
     for the docling document-conversion stack.
-  license: MIT AND BSD-3-Clause AND Apache-2.0
+  license: MIT AND BSD-3-Clause AND Apache-2.0 AND APAFML AND OFL-1.1
   license_family: Other
   license_file:
     - LICENSE
     - docling_parse/pdf_resources/cmap-resources/LICENSE.md
     - pdfium-license/LICENSE
+    - APAFML.txt # covers pdf_resources/fonts/standard/*.afm
+    - OFL.txt # covers pdf_resources/fonts/custom/TeX/*.afm
   doc_url: https://github.com/docling-project/docling-parse#readme
   dev_url: https://github.com/docling-project/docling-parse
 
