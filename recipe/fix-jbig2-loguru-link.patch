@@ -1,0 +1,19 @@
+--- a/cmake/extlib_pdfium_jbig2.cmake
++++ b/cmake/extlib_pdfium_jbig2.cmake
+@@ -32,13 +32,14 @@
+ 
+ # PDFium headers use root-relative includes (e.g. "core/fxcrt/span.h").
+ # The vendor root must be PRIVATE so PDFium internals never leak to consumers.
+-# loguru is added PRIVATE so jbig2_decode.cpp can use LOG_S().
+ target_include_directories(pdfium_jbig2
+     PRIVATE
+         ${PDFIUM_JBIG2_ROOT}
+-        $<TARGET_PROPERTY:loguru,INTERFACE_INCLUDE_DIRECTORIES>
+ )
+ 
++# Inherit loguru's usage requirements, including Windows DLL import definitions.
++target_link_libraries(pdfium_jbig2 PRIVATE loguru)
++
+ set_property(TARGET pdfium_jbig2 PROPERTY CXX_STANDARD 20)
+ set_target_properties(pdfium_jbig2 PROPERTIES POSITION_INDEPENDENT_CODE ON)
+ 

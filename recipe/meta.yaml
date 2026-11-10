@@ -1,0 +1,107 @@
+{% set name = "docling-parse" %}
+{% set version = "7.24.2" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  - url: https://github.com/docling-project/{{ name }}/releases/download/v{{ version }}/docling_parse-{{ version }}.tar.gz
+    sha256: 8b4e98e0a836dbe7e48e3f041a552ac252bd437ed0a52a62cf4a5f6f8fe73cb0
+    patches:
+      - fix-utfcpp.patch
+      - fix-jbig2-loguru-link.patch
+  # LICENSE for the PDFium JBIG2-decoder subset vendored (and kept bundled) in
+  # src/third_party/pdfium_jbig2. The exact PDFium snapshot commit is not
+  # recorded upstream (open provenance question on
+  # https://github.com/docling-project/docling-parse/pull/252); the vendored
+  # files use PDFium's pre-rename JBig2_* file layout, so they predate
+  # pdfium's snake_case rename. The archived chromium/pdfium GitHub mirror is
+  # immutable and its LICENSE is byte-identical (sha256-verified 2026-11-06)
+  # to pdfium.googlesource.com/pdfium@f8e0f053178d9030b9e3878d780bc75f70518e1c.
+  - url: https://raw.githubusercontent.com/chromium/pdfium/main/LICENSE
+    sha256: 1fe9dea718fbd75cf149adaf4d8a22a4335604d964ddb76d1b45383dec8668c9
+    folder: pdfium-license
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - cmake >=4.2.0,<5.0.0
+    - make  # [unix]
+    - pkg-config
+  host:
+    # python build tools ([build-system].requires of pyproject.toml, minus the
+    # cibuildwheel/delocate wheel-CI tooling that a conda build does not run)
+    - python
+    - pip
+    - setuptools >=77.0.3
+    - pybind11 >=2.13.6 # analint: pybind11_use_pybind11_abi
+    - wheel >=0.43.0,<1.0.0
+    # C++ libraries consumed via USE_SYSTEM_DEPS=on (cmake/extlib_*.cmake):
+    # cxxopts / loguru / nlohmann_json / utfcpp / libjpeg-turbo / openjpeg /
+    # lcms2 / qpdf / blend2d / freetype are unvendored to conda packages;
+    # the PDFium JBIG2 decoder subset is kept bundled (BSD-3-Clause, see
+    # the second source entry). No aggregate-CBC key exists for the first
+    # six, so they carry exact host pins (AR host-pinning policy); the rest
+    # pin through their CBC variables.
+    - cxxopts 3.2.1
+    - loguru-cpp 2.2.0
+    - nlohmann_json 3.12.0
+    - utfcpp 4.0.9
+    - libjpeg-turbo {{ libjpeg_turbo }}
+    - openjpeg {{ openjpeg }}
+    - lcms2 {{ lcms2 }}
+    - qpdf {{ qpdf }}
+    - zlib {{ zlib }}
+    - blend2d 0.21.2
+    - freetype {{ freetype }}
+  run:
+    - python
+    - pillow >=10.0.0,<14.0.0
+    - pydantic >=2.0.0
+    - docling-core >=2.99.0,<3.0.0
+    - pywin32 >=305  # [win]
+
+test:
+  imports:
+    - docling_parse
+  requires:
+    - pip
+    - pytest
+    - huggingface_hub
+    - fonttools
+    - pypdf
+  source_files:
+    - tests/
+  commands:
+    - pip check
+    # unit tests build every document they need inline (tests/pdf_builder.py),
+    # so the HuggingFace regression corpus is never downloaded
+    - python -c "import glob, pytest, sys; sys.exit(pytest.main(['-vv', '-k', 'not (test_lost_resources_object_is_reported)'] + sorted(glob.glob('tests/test_unit_*.py'))))"
+
+about:
+  home: https://github.com/docling-project/docling-parse
+  summary: Simple package to extract text with coordinates from programmatic PDFs
+  description: >-
+    Simple package to extract text, paths and bitmap images with coordinates from
+    programmatic PDFs. This package is used for text extraction and page rendering
+    for the docling document-conversion stack.
+  license: MIT AND BSD-3-Clause AND Apache-2.0 AND APAFML AND OFL-1.1
+  license_family: Other
+  license_file:
+    - LICENSE
+    - docling_parse/pdf_resources/cmap-resources/LICENSE.md
+    - pdfium-license/LICENSE
+    - APAFML.txt # covers pdf_resources/fonts/standard/*.afm
+    - OFL.txt # covers pdf_resources/fonts/custom/TeX/*.afm
+  doc_url: https://github.com/docling-project/docling-parse#readme
+  dev_url: https://github.com/docling-project/docling-parse
+
+extra:
+  recipe-maintainers:
+    - kklein
+    - mgorny
