@@ -1,5 +1,0 @@
-channels:
-  # loguru-cpp-feedstock PR#1 (loguru-cpp 2.2.0)
-  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/c2672e2c-942c-42cd-9458-2baae806e39a
-  # blend2d-feedstock PR#1 (blend2d 0.21.2)
-  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/74c11839-1263-4b63-91e9-441ca956afa4
