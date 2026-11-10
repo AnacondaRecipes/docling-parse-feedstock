@@ -74,6 +74,7 @@ test:
     - pytest
     - huggingface_hub
     - fonttools
+    - pypdf
   source_files:
     - tests/
   commands:
